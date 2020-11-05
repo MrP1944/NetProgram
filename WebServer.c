@@ -29,7 +29,7 @@ struct {
     {"exe","text/plain" },
     {0,0} };
 
-void doget(int taken, int socket_fd,char* buffer){
+void doget(long taken, int socket_fd,char* buffer){
 
 	char* dir = (char*)0;
 	int nowpos=0;
@@ -86,14 +86,13 @@ void doget(int taken, int socket_fd,char* buffer){
 	free(dir);
 	return;
 }
-void dopost(int taken, int socket_fd, char* buffer){
+void dopost(long taken, int socket_fd, char* buffer){
 
 	//check upload file
 	char *pos; 
 	pos = strstr(buffer,"filename=\"");
 	if (pos == 0)
 		return;//no upload
-	printf("I uploaded\n");
 
 	char filename[BUFSIZE+1],dir[BUFSIZE+1];	
 	//get file name
@@ -115,20 +114,33 @@ void dopost(int taken, int socket_fd, char* buffer){
 	//locate position to start 
 	end = pos;
 	end = strstr(end, "\r\n---------------");
+	if(end != NULL)	
+		*end = '\0';
+	else
+		end = &buffer[BUFSIZE];
 	//locate end position
 
 	int download_fd = open(dir,O_CREAT|O_WRONLY|O_TRUNC|O_SYNC,S_IRWXO|S_IRWXU|S_IRWXG);
 	if(download_fd == -1)
 		write(socket_fd,"Faild to download file.\n",19);
 
-	write(download_fd,pos,(end-pos));
-	while((taken = read(socket_fd, buffer, BUFSIZE)) > 0 ){
-		//printf("StillWriting\n");
-		write(download_fd,buffer,taken);
+	write(download_fd,pos,(end - pos));
+	
+	while((taken = read(socket_fd, buffer, BUFSIZE)) > 0){
+		printf("In while\n");	
+		//taken = read(socket_fd, buffer, BUFSIZE);
+		end = strstr(end, "\r\n---------------");
+		if(end != NULL)
+			*end = '\0';
+		else
+			end = &buffer[BUFSIZE];
+		write(download_fd, buffer, (end - buffer));
+		if(end)
+			break;
 	}
 	close(download_fd);
 	printf("////close fd////\n");
-
+	
 	taken = open("./deafult.html", O_RDONLY);
 	sprintf(buffer,"HTTP/1.0 200 OK\r\nContent-Type: text/html\r\n\r\n");
 	write(socket_fd, buffer, strlen(buffer));
@@ -160,13 +172,13 @@ void dealsocket(int socket_fd){
 	if((taken == 0)||(taken == -1)){
 		perror("read form socket");
 		exit(3);
-	}else{
-		for(i=0;i<buflen;i++){	
-			printf("%c",buffer[i]);
+	}//else{
+		//for(i=0;i<buflen;i++){	
+			//printf("%c",buffer[i]);
 			//if((buffer[i] =='\n') ||  (buffer[i] =='\r'))
 				//buffer[i] = '\0';
-		}
-	}
+	 //	}
+	//}
 
 	i = 0;
 	//deal GET or POST
@@ -193,7 +205,8 @@ int main(int argc, char **argv){
 
     int i, pid, listenfd, socketfd;
     int length;
-    static struct sockaddr_in cli_addr;
+    int reuse=0;
+	static struct sockaddr_in cli_addr;
     static struct sockaddr_in serv_addr;
 	printf("Start of Server\n");
 	
@@ -211,7 +224,9 @@ int main(int argc, char **argv){
     listenfd = socket(AF_INET, SOCK_STREAM, 0);
 	if (listenfd<0)
         exit(3);
-
+	if ((setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse))) < 0){
+		perror("setsockopet error");
+	}
 
 	//set net
     serv_addr.sin_family = AF_INET;
@@ -220,7 +235,7 @@ int main(int argc, char **argv){
 
 	// set port
     serv_addr.sin_port = htons(80);
-
+	
     /* 開啟網路監聽器 */
     if (bind(listenfd, (struct sockaddr *)&serv_addr,sizeof(serv_addr))<0){
 		
