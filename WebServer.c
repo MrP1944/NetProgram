@@ -10,7 +10,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-#define BUFSIZE 32768
+#define BUFSIZE 65536
 
 struct {
     char *ext;
@@ -64,19 +64,12 @@ void doget(int taken, int socket_fd,char* buffer){
 	int dirlen = strlen(dir);
 	for(int i=0;exts[i].ext!=0;i++){
 		len = strlen(exts[i].ext);
-		printf("Checking %s and %s\n",&dir[pointpos+2],exts[i].ext);
 		if(!strncmp(&dir[pointpos+2], exts[i].ext, len)){
 			fstr = exts[i].type;
 			break;
 		}
 	}
 	
-
-
-	printf("///////////////\n");
-	printf("My DIR IS %s\n",dir);
-	printf("My Type is %s\n",fstr);
-	printf("///////////////\n");
 
 	////tell clinet failed
 	if((file_fd = open(dir,O_RDONLY)) == -1)
@@ -87,19 +80,70 @@ void doget(int taken, int socket_fd,char* buffer){
 	write(socket_fd,buffer,strlen(buffer));
 	
 	while((tmp = read(file_fd, buffer, BUFSIZE)) > 0){
-		printf("writing\n");
 		write(socket_fd, buffer, tmp);
 	}
+	close(file_fd);
+	free(dir);
+	return;
+}
+void dopost(int taken, int socket_fd, char* buffer){
+
+	//check upload file
+	char *pos; 
+	pos = strstr(buffer,"filename=\"");
+	if (pos == 0)
+		return;//no upload
+	printf("I uploaded\n");
+
+	char filename[BUFSIZE+1],dir[BUFSIZE+1];	
+	//get file name
+	pos+=10;
+	long i=9;
+	sprintf(dir,"./upload/");
+
+	char *end=strstr(pos,"\""),*j;
+	for(j=pos;j!=end;i++,j++){
+		dir[i] = *j;
+	}//cat filename behind dir
+	
+	dir[i]=0;
+
+	pos = strstr(pos,"\n");
+	pos = strstr(pos+1,"\n");
+	pos = strstr(pos+1,"\n");
+	pos++;
+	//locate position to start 
+	end = pos;
+	end = strstr(end, "\r\n---------------");
+	//locate end position
+
+	int download_fd = open(dir,O_CREAT|O_WRONLY|O_TRUNC|O_SYNC,S_IRWXO|S_IRWXU|S_IRWXG);
+	if(download_fd == -1)
+		write(socket_fd,"Faild to download file.\n",19);
+
+	write(download_fd,pos,(end-pos));
+	while((taken = read(socket_fd, buffer, BUFSIZE)) > 0 ){
+		//printf("StillWriting\n");
+		write(download_fd,buffer,taken);
+	}
+	close(download_fd);
+	printf("////close fd////\n");
+
+	taken = open("./deafult.html", O_RDONLY);
+	sprintf(buffer,"HTTP/1.0 200 OK\r\nContent-Type: text/html\r\n\r\n");
+	write(socket_fd, buffer, strlen(buffer));
+
+	while((i = read(taken, buffer, BUFSIZE)) > 0){
+		
+		write(socket_fd, buffer, i);
+	}
+	close(taken);
+	printf("Done");
 	return;
 }
 
-void dopost(int taken, int socket_fd, char* buffer){
-	
-		
-	
-	
-	return;
-}
+
+
 void dealsocket(int socket_fd){
     
 	long i, j, taken;
@@ -107,26 +151,39 @@ void dealsocket(int socket_fd){
     char * fstr;
     static char buffer[BUFSIZE+1];
 	
-    taken = read(socket_fd,buffer,BUFSIZE);   /* 讀取瀏覽器要求 */
+	//read from browser
+    taken = read(socket_fd,buffer,BUFSIZE);
 	
 	buflen = strlen(buffer);
 
+	//print the buffer on Terminal and remove\r\n
 	if((taken == 0)||(taken == -1)){
 		perror("read form socket");
 		exit(3);
 	}else{
-		for(i=0;i<buflen;i++){
+		for(i=0;i<buflen;i++){	
 			printf("%c",buffer[i]);
+			//if((buffer[i] =='\n') ||  (buffer[i] =='\r'))
+				//buffer[i] = '\0';
 		}
 	}
-	i = 0;
-	if((strncmp(buffer,"GET ",4) == 0) || (strncmp(buffer,"get ",4) == 0))
-		doget(taken, socket_fd, buffer);
-	else if((strncmp(buffer,"POST ",5) == 0) || (strncmp(buffer,"post ",5)))
-		dopost(taken, socket_fd, buffer);
-	else
-		printf("None Should do\n");
 
+	i = 0;
+	//deal GET or POST
+	if((strncmp(buffer,"GET ",4) == 0) || (strncmp(buffer,"get ",4) == 0)){
+		
+		printf("//////////////////////DO GET\n");
+		doget(taken, socket_fd, buffer);//GET
+	}else if((strncmp(buffer,"POST ",5) == 0) || (strncmp(buffer,"post ",5))){
+	
+		printf("////////////////////DO POST\n");
+		dopost(taken, socket_fd, buffer);//POST
+	}
+	else{
+	
+		printf("None Should do\n");//other
+	}
+	
 	return;
 }
 
@@ -139,18 +196,15 @@ int main(int argc, char **argv){
     static struct sockaddr_in cli_addr;
     static struct sockaddr_in serv_addr;
 	printf("Start of Server\n");
-
-    /* 使用 /tmp 當網站根目錄 */
+	
+    //work in data
     if(chdir("./data") == -1){ 
         printf("ERROR: Can't Change to directory %s\n",argv[2]);
         exit(4);
     }
 
-    /* 背景繼續執行 */
-    //if(fork() != 0)
-    //    return 0;
-
-    /* 讓父行程不必等待子行程結束 */
+    
+	//prevent zombie
     signal(SIGCLD, SIG_IGN);
 
     //open socket
@@ -174,7 +228,6 @@ int main(int argc, char **argv){
 		exit(3);
 	}
 	
-	printf("bind\n");
     
 	/* 開始監聽網路 */
     if (listen(listenfd,64)<0){
@@ -182,11 +235,9 @@ int main(int argc, char **argv){
 		perror("listen");
 		exit(3);
 	}
-	printf("listen\n");
     
 	while(1){
 		
-		printf("in waiting\n");        
 		length = sizeof(cli_addr);
         /* 等待客戶端連線 */
 		socketfd = accept(listenfd, (struct sockaddr* )&cli_addr, &length);
