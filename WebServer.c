@@ -87,7 +87,8 @@ void doget(long taken, int socket_fd,char* buffer){
 	return;
 }
 void dopost(long taken, int socket_fd, char* buffer){
-
+	
+	int buflen;
 	//check upload file
 	char *pos; 
 	pos = strstr(buffer,"filename=\"");
@@ -114,28 +115,32 @@ void dopost(long taken, int socket_fd, char* buffer){
 	//locate position to start 
 	end = pos;
 	end = strstr(end, "\r\n---------------");
+	buflen = strlen(buffer);
 	if(end != NULL)	
 		*end = '\0';
 	else
-		end = &buffer[BUFSIZE];
+		end = &buffer[buflen-1];
 	//locate end position
 
 	int download_fd = open(dir,O_CREAT|O_WRONLY|O_TRUNC|O_SYNC,S_IRWXO|S_IRWXU|S_IRWXG);
 	if(download_fd == -1)
 		write(socket_fd,"Faild to download file.\n",19);
 
-	write(download_fd,pos,(end - pos));
+	write(download_fd,pos,(end-pos));
 	
 	while((taken = read(socket_fd, buffer, BUFSIZE)) > 0){
-		printf("In while\n");	
+		
+		printf("In while\n");
+		buflen = strlen(buffer);
 		//taken = read(socket_fd, buffer, BUFSIZE);
-		end = strstr(end, "\r\n---------------");
-		if(end != NULL)
+		end = strstr(end, "---------------");
+		if(end != NULL){
 			*end = '\0';
-		else
-			end = &buffer[BUFSIZE];
-		write(download_fd, buffer, (end - buffer));
-		if(end)
+			write(download_fd, buffer, (end - buffer));
+		}else{
+			write(download_fd, buffer, taken);
+		}
+		if(end != NULL)
 			break;
 	}
 	close(download_fd);
@@ -172,13 +177,13 @@ void dealsocket(int socket_fd){
 	if((taken == 0)||(taken == -1)){
 		perror("read form socket");
 		exit(3);
-	}//else{
-		//for(i=0;i<buflen;i++){	
-			//printf("%c",buffer[i]);
+	}else{
+		for(i=0;i<buflen;i++){	
+			printf("%c",buffer[i]);
 			//if((buffer[i] =='\n') ||  (buffer[i] =='\r'))
 				//buffer[i] = '\0';
-	 //	}
-	//}
+	 	}
+	}
 
 	i = 0;
 	//deal GET or POST
