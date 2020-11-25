@@ -1,5 +1,5 @@
 all:
-	gcc server_v1.c -o server -pthread
-	gcc client_v1.c -o client -pthread
+	gcc server.c -o server_OX -pthread
+	gcc client.c -o client_OX -pthread
 clean:
-	rm server_v1 client_v1
+	rm server_OX client_OX
