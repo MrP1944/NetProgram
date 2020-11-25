@@ -159,7 +159,7 @@ void message_handler(char *mes, int sender)
 			//check win
             for (int i = 0; i < 8;i++)  {
                 if (board[win_dis[i][0]]==board[win_dis[i][1]] && board[win_dis[i][1]]==board[win_dis[i][2]]) {
-                    if (board[win_dis[i][0]]!='0') {
+                    if (board[win_dis[i][0]]!='*') {
                     strcat(state, "_Win!/////////////////\n");
                     sprintf (buf,"8 2 %c %c %c %c %c %c %c %c %c %s\n",board[0],board[1],board[2],board[3],board[4],board[5],board[6],board[7],board[8],state);
                     printf ("7:%s",buf);
@@ -175,6 +175,8 @@ void message_handler(char *mes, int sender)
             memset(buf,'\0',MAXSIZE);
             memset(state,'\0',sizeof(state));
             for (int i = 0; i < 9;i++) {
+                if (board[i]== '*')
+                    break;
                 if (i==8) {
                     strcat(state, "////////draw!////////\n");
                     sprintf (buf,"8 2 %c %c %c %c %c %c %c %c %c %s\n",board[0],board[1],board[2],board[3],board[4],board[5],board[6],board[7],board[8],state);
@@ -184,8 +186,6 @@ void message_handler(char *mes, int sender)
                     gameover(sender, users[sender].playwith);
                     return;
                 }
-                if (board[i]== '0')
-                    break;
             }
 			
 			//no draw and no win, play continue

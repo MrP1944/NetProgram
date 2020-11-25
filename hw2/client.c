@@ -85,9 +85,9 @@ void pthread_recv(void* ptr)
 				char dueler[100];
 				sscanf(recvbuf,"6 %d %s %s\n",&turn,hoster,dueler);
                 for(int i=0;i<9;i++)
-					board[i] = '0';
+					board[i] = '*';
 				printf("遊戲開始！！！！！\n");
-                printf("0 為空白處\n");
+                printf("* 為空白處\n");
                 printf("%s 為 O\n",hoster);
                 printf("%s 為 X\n",dueler);
                 printf("%s go first!\n",hoster);
