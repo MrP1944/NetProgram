@@ -22,11 +22,12 @@ int turn = 0;
 char sign;
 
 void help(){
-    printf("To change user name, input: 1 Your_name\n");
-    printf("To show all user, input: 2\n");
-    printf("To invite other player, input: 3 Other's_name\n");
-    printf("To logout, input: logout\n");
-	printf("To recheck these message, input: help\n\n");
+    printf("下列指令內容皆不用打入角括弧<>\n")
+	printf("若要更改名稱,輸入：1 <Name>\n");
+    printf("列出所有玩家,輸入：2\n");
+    printf("邀請玩家進行遊戲,輸入：3 <PlayerName>\n");
+    printf("登出,輸入：logout\n");
+	printf("再次確認指令說明,輸入：help\n\n");
 }
 
 void print_board(char *board){
@@ -75,8 +76,8 @@ void pthread_recv(void* ptr)
                 char inviter[100];
                 sscanf(recvbuf,"%d %s",&instruction, inviter);
                 printf("%s\n", &recvbuf[2]); // Print the message behind the instruction.
-                printf("if accept, please input:5 Y %s\n", inviter);
-                printf("If not, input:5 N %s\n\n", inviter);
+                printf("接受邀請,請輸入：5 Y %s\n", inviter);
+                printf("拒絕邀請,請輸入：5 N %s\n\n", inviter);
                 break;
             }
             case 6: {
@@ -85,12 +86,12 @@ void pthread_recv(void* ptr)
 				sscanf(recvbuf,"6 %d %s %s\n",&turn,hoster,dueler);
                 for(int i=0;i<9;i++)
 					board[i] = '0';
-				printf("Game Start!\n");
-                printf("Blank space is 0\n");
-                printf("%s is O\n",hoster);
-                printf("%s is X\n",dueler);
+				printf("遊戲開始！！！！！\n");
+                printf("0 為空白處\n");
+                printf("%s 為 O\n",hoster);
+                printf("%s 為 X\n",dueler);
                 printf("%s go first!\n",hoster);
-                printf("Please input:-0~8\n");
+                printf("請輸入：-<0~8> (需要輸入減號-)\n");
                 print_board(board);
 				if(turn)
 					sign = 'O';
@@ -108,10 +109,10 @@ void pthread_recv(void* ptr)
                 print_board(board);
                 printf("%s\n", msg);
 				if(turn != 2){
-                	printf("Please input:-[0~8]\n");
+                	printf("請輸入：-<0~8> (需要輸入減號-)\n");
 				}else{
-					printf("////////the game is over/////////\n");
-					printf("please reinvite player to play another game!\n");
+					printf("////////遊戲已經結束/////////\n");
+					printf("請重新邀請玩家來進行其他遊戲\n");
 					help();
 					sign = 0;
 				}

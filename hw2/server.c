@@ -38,7 +38,7 @@ void message_handler(char *mes, int sender)
             char buf[MAXSIZE];
 			sscanf (mes,"1 %s\n",name);
             if(find_fd(name) != -1){
-				sprintf(buf, "%s is already in use, please change other one\n", name);
+				sprintf(buf, "2 %s 名稱已有人使用,請更改為其他名稱\n", name);
 				send(sender, buf, strlen(buf), 0);
 			}else{
 				sscanf(&mes[2],"%s\n",users[sender].id);
@@ -130,9 +130,9 @@ void message_handler(char *mes, int sender)
             	
 			}else if(state == 'N' || state == 'n'){
 				
-				sprintf(buf, "2 You rejected %s 's duel inviation\n", users[targetfd].id);
+				sprintf(buf, "2 You rejected %s 's inviation\n", users[targetfd].id);
 				send(sender, buf, strlen(buf), 0);
-				sprintf(buf, "2 %s is rejected yours duel inviation\n", users[sender].id);
+				sprintf(buf, "2 %s is rejected yours inviation\n", users[sender].id);
 				send(targetfd, buf, strlen(buf), 0);
 				users[targetfd].inviting = -1;
 				users[sender].inviting = -1;
