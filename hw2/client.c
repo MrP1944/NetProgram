@@ -22,7 +22,7 @@ int turn = 0;
 char sign;
 
 void help(){
-    printf("下列指令內容皆不用打入角括弧<>\n")
+    printf("下列指令內容皆不用打入角括弧<>\n");
 	printf("若要更改名稱,輸入：1 <Name>\n");
     printf("列出所有玩家,輸入：2\n");
     printf("邀請玩家進行遊戲,輸入：3 <PlayerName>\n");
