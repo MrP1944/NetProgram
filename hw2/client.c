@@ -190,7 +190,7 @@ int main(int argc, char *argv[]){
         if(sendbuf[0] == '-'){
             if(turn == 1){
 				sscanf(&sendbuf[1], "%d", &location);
-            	if(board[location] != '0')
+            	if(board[location] != '*')
 					printf("The place is already exist!!\nchange a place!!!!!!\n");
 				else
 					write_on_board(board, location);
